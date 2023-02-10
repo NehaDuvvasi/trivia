@@ -6,8 +6,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-database_path = "{}://{}:{}/{}".format(os.getenv("DOMAIN"),
-    os.getenv("USER"), os.getenv("EMAIL"), os.getenv("database_name")
+database_path = "{}://{}:{}/{}".format(
+    os.getenv("DOMAIN"),
+    os.getenv("USER"),
+    os.getenv("EMAIL"),
+    os.getenv("database_name"),
 )
 db = SQLAlchemy()
 

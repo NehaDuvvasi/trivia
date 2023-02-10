@@ -9,6 +9,7 @@ from models import setup_db, Question, Category, db
 
 QUESTIONS_PER_PAGE = 10
 
+
 def paginate_questions(request, selection):
     page = request.args.get("page", 1, type=int)
     start = (page - 1) * 10
@@ -17,6 +18,7 @@ def paginate_questions(request, selection):
     questions = [question.format() for question in selection]
     current_questions = questions[start:end]
     return current_questions
+
 
 def create_app(test_config=None):
     app = Flask(__name__)
@@ -48,7 +50,6 @@ def create_app(test_config=None):
     def get_questions():
         selection = Question.query.all()
         # questions = paginate_questions(request, selection)
-        
 
         categories = Category.query.all()
         questions = paginate_questions(request, selection)
@@ -86,7 +87,6 @@ def create_app(test_config=None):
         ) == None:
             abort(422)
 
-
         question = Question(
             question=new_question,
             answer=new_answer,
@@ -109,18 +109,21 @@ def create_app(test_config=None):
     def search_questions():
         try:
             question_data = json.loads(request.data)
-            search_term= question_data['searchTerm']
-            if (search_term):
+            search_term = question_data["searchTerm"]
+            if search_term:
                 search_word = search_term
-                selection = db.session.query(Question).filter(
-                    Question.question.ilike("%" + search_word + "%")).all()
+                selection = (
+                    db.session.query(Question)
+                    .filter(Question.question.ilike("%" + search_word + "%"))
+                    .all()
+                )
                 paginated = paginate_questions(request, selection)
                 question = Question.query.all()
-                result = ({
-                    'success': True,
-                    'questions': paginated,
-                    'total_questions': len(question)
-                })
+                result = {
+                    "success": True,
+                    "questions": paginated,
+                    "total_questions": len(question),
+                }
                 return jsonify(result)
         except Exception as e:
             print(e)
@@ -130,55 +133,59 @@ def create_app(test_config=None):
         question_data = Question.category == str(category_id)
         selection = db.session.query(Question).filter(question_data).all()
         paginated = paginate_questions(request, selection)
-        result = (
-            {
-                "success": True,
-                "questions": paginated,
-                "total_questions": len(selection),
-                "category": category_id,
-            }
-        )
+        result = {
+            "success": True,
+            "questions": paginated,
+            "total_questions": len(selection),
+            "category": category_id,
+        }
         return jsonify(result)
 
     @app.route("/quizzes", methods=["POST"])
     def play_quiz():
         try:
-            data =json.loads(request.data)
+            data = json.loads(request.data)
             if not all(key in data for key in ["quiz_category", "previous_questions"]):
                 abort(422)
-            prev_ques = data['previous_questions']
-            choose_category = data['quiz_category']
+            prev_ques = data["previous_questions"]
+            choose_category = data["quiz_category"]
             if choose_category["type"] == "click":
                 available_questions = db.session.query(Question).all()
             else:
-                available_questions = db.session.query(Question).filter_by(category=choose_category['id']).all()
-                question =db.session.query(Question).all()
+                available_questions = (
+                    db.session.query(Question)
+                    .filter_by(category=choose_category["id"])
+                    .all()
+                )
+                question = db.session.query(Question).all()
             new_question = (
                 random.choice(available_questions).format()
                 if available_questions
                 else None
             )
             total = len(available_questions)
+
             def random_question():
-                return available_questions[random.randrange(0, len(available_questions))] if len(available_questions) > 0 else None
+                return (
+                    available_questions[random.randrange(0, len(available_questions))]
+                    if len(available_questions) > 0
+                    else None
+                )
+
             def repeated(question):
                 repeated = False
                 for n in prev_ques:
-                    if (n == question.id):
+                    if n == question.id:
                         repeated = True
                 return repeated
+
             question = random_question()
-            while (repeated(question)):
+            while repeated(question):
                 question = random_question()
-                if (len(prev_ques) == total):
-                    result = ({
-                        'success': True
-                    })
+                if len(prev_ques) == total:
+                    result = {"success": True}
                     return jsonify(result)
-            result = ({
-                'success': True,
-                'question': question.format()
-            })
+            result = {"success": True, "question": question.format()}
             return jsonify(result)
         except Exception as e:
             print(e)
