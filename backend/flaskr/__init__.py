@@ -35,18 +35,16 @@ def create_app(test_config=None):
         )
         return response
 
-    @app.route("/categories")
+    @app.route("/categories", methods=["get"])
     def get_categories():
         categories = Category.query.order_by(Category.type).all()
         result = {
             "success": True,
             "categories": {category.id: category.type for category in categories},
         }
-        if len(categories) == 0:
-            abort(404)
         return jsonify(result)
 
-    @app.route("/questions")
+    @app.route("/questions", methods=["get"])
     def get_questions():
         selection = Question.query.all()
         categories = Category.query.all()
@@ -58,8 +56,6 @@ def create_app(test_config=None):
             "categories": {category.id: category.type for category in categories},
             "current_categories": None,
         }
-        if len(questions) == 0:
-            abort(404)
         return jsonify(result)
 
     @app.route("/questions/<question_id>", methods=["DELETE"])
@@ -210,7 +206,12 @@ def create_app(test_config=None):
 
     @app.errorhandler(500)
     def bad_request(error):
-        return jsonify({"success": False, "error": 500, "message": "Internal server error"}), 500
+        return (
+            jsonify(
+                {"success": False, "error": 500, "message": "Internal server error"}
+            ),
+            500,
+        )
 
     @app.errorhandler(400)
     def bad_request(error):

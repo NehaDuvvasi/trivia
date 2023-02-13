@@ -37,17 +37,15 @@ class TriviaTestCase(unittest.TestCase):
     def tearDown(self):
         """Executed after reach test"""
         pass
-    
 
     def test_get_categories(self):
         res = self.client().get("/categories")
         data = json.loads(res.data)
-        self.assertEqual(res.status_code, 404)
-        self.assertEqual(data["success"], False)
-        self.assertTrue(data["error"])
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data["success"], True)
 
     def test_404_invalid_categories(self):
-        res = self.client().get("/categories=10")
+        res = self.client().get("/categories=8")
         data = json.loads(res.data)
         self.assertEqual(data["error"], 404)
         self.assertEqual(data["success"], False)
@@ -55,8 +53,8 @@ class TriviaTestCase(unittest.TestCase):
     def test_get_questions(self):
         res = self.client().get("/questions")
         data = json.loads(res.data)
-        self.assertEqual(res.status_code, 404)
-        self.assertEqual(data["success"], False)
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(data["success"], True)
 
     def test_404_invalid_questions(self):
         res = self.client().get("/questions=80")
@@ -67,7 +65,6 @@ class TriviaTestCase(unittest.TestCase):
     def test_get_questions_per_category(self):
         res = self.client().get("/categories/1/questions")
         data = json.loads(res.data)
-
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data["success"], True)
 
