@@ -37,6 +37,7 @@ class TriviaTestCase(unittest.TestCase):
     def tearDown(self):
         """Executed after reach test"""
         pass
+    
 
     def test_get_categories(self):
         res = self.client().get("/categories")
@@ -46,7 +47,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data["error"])
 
     def test_404_invalid_categories(self):
-        res = self.client().get("/categories=8")
+        res = self.client().get("/categories=10")
         data = json.loads(res.data)
         self.assertEqual(data["error"], 404)
         self.assertEqual(data["success"], False)
@@ -80,7 +81,7 @@ class TriviaTestCase(unittest.TestCase):
 
     def test_delete_question(self):
         res = self.client().delete("/questions/1000")
-        self.assertEqual(res.status_code, 500)
+        self.assertEqual(res.status_code, 422)
 
     def test_422_question_not_exist(self):
         res = self.client().delete("/questions/1000/json")

@@ -37,7 +37,7 @@ def create_app(test_config=None):
 
     @app.route("/categories")
     def get_categories():
-        categories = db.session.query(Category).order_by(Category.type).all()
+        categories = Category.query.order_by(Category.type).all()
         result = {
             "success": True,
             "categories": {category.id: category.type for category in categories},
@@ -49,8 +49,6 @@ def create_app(test_config=None):
     @app.route("/questions")
     def get_questions():
         selection = Question.query.all()
-        # questions = paginate_questions(request, selection)
-
         categories = Category.query.all()
         questions = paginate_questions(request, selection)
         result = {
@@ -66,44 +64,50 @@ def create_app(test_config=None):
 
     @app.route("/questions/<question_id>", methods=["DELETE"])
     def delete_question(question_id):
-        question = db.session.query(Question).get(question_id)
-        question.delete()
-        return jsonify({"success": True, "deleted": question_id})
-
-    @app.route("/questions", methods=["GET", "POST"])
-    def add_question():
-        question_data = json.loads(request.data)
-        new_question = question_data["question"]
-        new_answer = question_data["answer"]
-        new_difficulty = question_data["difficulty"]
-        new_category = question_data["category"]
-
-        if (
-            question_data,
-            new_question,
-            new_answer,
-            new_category,
-            new_difficulty,
-        ) == None:
+        try:
+            question = db.session.query(Question).get(question_id)
+            question.delete()
+            return jsonify({"success": True, "deleted": question_id})
+        except Exception as e:
             abort(422)
 
-        question = Question(
-            question=new_question,
-            answer=new_answer,
-            difficulty=new_difficulty,
-            category=new_category,
-        )
-        question.insert()
+    @app.route("/questions", methods=["POST"])
+    def add_question():
+        try:
+            question_data = json.loads(request.data)
+            new_question = question_data["question"]
+            new_answer = question_data["answer"]
+            new_difficulty = question_data["difficulty"]
+            new_category = question_data["category"]
 
-        return jsonify(
-            {
-                "success": True,
-                "created": question.id,
-                "answer": new_answer,
-                "difficulty": new_difficulty,
-                "category": new_category,
-            }
-        )
+            if (
+                question_data,
+                new_question,
+                new_answer,
+                new_category,
+                new_difficulty,
+            ) == None:
+                abort(422)
+
+            question = Question(
+                question=new_question,
+                answer=new_answer,
+                difficulty=new_difficulty,
+                category=new_category,
+            )
+            question.insert()
+
+            return jsonify(
+                {
+                    "success": True,
+                    "created": question.id,
+                    "answer": new_answer,
+                    "difficulty": new_difficulty,
+                    "category": new_category,
+                }
+            )
+        except Exception as e:
+            abort(422)
 
     @app.route("/questions/search", methods=["GET", "POST"])
     def search_questions():
@@ -126,20 +130,23 @@ def create_app(test_config=None):
                 }
                 return jsonify(result)
         except Exception as e:
-            print(e)
+            abort(422)
 
     @app.route("/categories/<int:category_id>/questions", methods=["GET", "POST"])
     def get_questions_by_category(category_id):
-        question_data = Question.category == str(category_id)
-        selection = db.session.query(Question).filter(question_data).all()
-        paginated = paginate_questions(request, selection)
-        result = {
-            "success": True,
-            "questions": paginated,
-            "total_questions": len(selection),
-            "category": category_id,
-        }
-        return jsonify(result)
+        try:
+            question_data = Question.category == str(category_id)
+            selection = db.session.query(Question).filter(question_data).all()
+            paginated = paginate_questions(request, selection)
+            result = {
+                "success": True,
+                "questions": paginated,
+                "total_questions": len(selection),
+                "category": category_id,
+            }
+            return jsonify(result)
+        except Exception as e:
+            abort(422)
 
     @app.route("/quizzes", methods=["POST"])
     def play_quiz():
@@ -188,7 +195,7 @@ def create_app(test_config=None):
             result = {"success": True, "question": question.format()}
             return jsonify(result)
         except Exception as e:
-            print(e)
+            abort(422)
 
     @app.errorhandler(404)
     def not_found(error):
@@ -200,6 +207,10 @@ def create_app(test_config=None):
             jsonify({"success": False, "error": 422, "message": "unprocessable"}),
             422,
         )
+
+    @app.errorhandler(500)
+    def bad_request(error):
+        return jsonify({"success": False, "error": 500, "message": "Internal server error"}), 500
 
     @app.errorhandler(400)
     def bad_request(error):
